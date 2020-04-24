@@ -799,7 +799,7 @@ Exit_MyDecryptFile:
 void ProcessFile(fs::path file_path, string& mode)
 {
 	std::cout << "in process file: " << file_path.filename().string() << '\n';
-	if (mode == "encrypt")
+	if (mode == "Encrypt")
 	{
 		bool res_encrypt = EncryptFile(file_path);
 		if (!res_encrypt)
@@ -809,7 +809,7 @@ void ProcessFile(fs::path file_path, string& mode)
 				GetLastError());
 		}
 	}
-	else if (mode == "decrypt")
+	else if (mode == "Decrypt")
 	{
 		bool res_decrypt = DecryptFile(file_path);
 		if (!res_decrypt)
@@ -860,20 +860,18 @@ void IterateDir(string& dir_path, string& mode)
 
 int main(int argc, char** argv)
 {
-	// todo: check args
-	// todo: check ret val for encrypt and decrypt
 	if (argc < 3)
 	{
-		_tprintf(TEXT("Usage: <target dir> <mode: encrypt or decrypt> \n"));
+		_tprintf(TEXT("Usage: <target dir> <mode: Encrypt or Decrypt> \n"));
 		return 1;
 	}
 
 	string dir_name = argv[1];
 	string mode = argv[2];
 
-	if (mode != "encrypt" && mode != "decrypt")
+	if (mode != "Encrypt" && mode != "Decrypt")
 	{
-		_tprintf(TEXT("Usage: <target dir> <mode: encrypt or decrypt> \n"));
+		_tprintf(TEXT("Usage: <target dir> <mode: Encrypt or Decrypt> \n"));
 		return 1;
 	}
 
@@ -882,7 +880,7 @@ int main(int argc, char** argv)
 		_tprintf(
 			TEXT("The input dir %s, is not a directory or doen't exist. \n"),
 			dir_name);
-		_tprintf(TEXT("Usage: <target dir> <mode: encrypt or decrypt> \n"));
+		_tprintf(TEXT("Usage: <target dir> <mode: Encrypt or Decrypt> \n"));
 		return 1;
 	}
 
