@@ -26,7 +26,7 @@ void MyHandleError(const wchar_t* psz, int nErrorNumber)
 }
 
 
-bool encrypt_file(fs::path file_path)
+bool EncryptFile(fs::path file_path)
 {
 	// Declare and initialize local variables.
 	bool fReturn = false;
@@ -475,7 +475,7 @@ Exit_MyEncryptFile:
 } // End Encryptfile.
 
 
-bool decrypt_file(fs::path file_path)
+bool DecryptFile(fs::path file_path)
 {
 	//---------------------------------------------------------------
 	// Declare and initialize local variables.
@@ -796,21 +796,33 @@ Exit_MyDecryptFile:
 
 
 
-void process_file(fs::path file_path, string& mode)
+void ProcessFile(fs::path file_path, string& mode)
 {
 	std::cout << "in process file: " << file_path.filename().string() << '\n';
 	if (mode == "encrypt")
 	{
-		encrypt_file(file_path);
+		bool res_encrypt = EncryptFile(file_path);
+		if (!res_encrypt)
+		{
+			MyHandleError(
+				TEXT("Error encrypting file!\n"),
+				GetLastError());
+		}
 	}
 	else if (mode == "decrypt")
 	{
-		decrypt_file(file_path);
+		bool res_decrypt = DecryptFile(file_path);
+		if (!res_decrypt)
+		{
+			MyHandleError(
+				TEXT("Error decrypting file!\n"),
+				GetLastError());
+		}
 	}
 }
 
 // encrypt .txt file in dir recursively
-void iterate_dir(string& dir_path, string& mode)
+void IterateDir(string& dir_path, string& mode)
 {
 	try {
 		const fs::path pathToShow{ dir_path };
@@ -825,7 +837,7 @@ void iterate_dir(string& dir_path, string& mode)
 				std::cout << "file: " << filenameStr << '\n';
 				if (_stricmp(iterEntry->path().extension().string().c_str(), ".txt") == 0)
 				{
-					process_file(iterEntry->path(), mode);
+					ProcessFile(iterEntry->path(), mode);
 				}
 			}
 			else
@@ -859,7 +871,23 @@ int main(int argc, char** argv)
 	string dir_name = argv[1];
 	string mode = argv[2];
 
-	iterate_dir(dir_name, mode);
+	if (mode != "encrypt" && mode != "decrypt")
+	{
+		_tprintf(TEXT("Usage: <target dir> <mode: encrypt or decrypt> \n"));
+		return 1;
+	}
+
+	if (!fs::is_directory(dir_name))
+	{
+		_tprintf(
+			TEXT("The input dir %s, is not a directory or doen't exist. \n"),
+			dir_name);
+		_tprintf(TEXT("Usage: <target dir> <mode: encrypt or decrypt> \n"));
+		return 1;
+	}
+
+
+	IterateDir(dir_name, mode);
 
 }
 
