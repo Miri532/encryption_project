@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.29411.108
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "encryption_project", "encryption_project\encryption_project.vcxproj", "{ED6E6A5C-01C1-47EE-B4D3-B646E6D092DB}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Encrypting_a_File", "Encrypting_a_File\Encrypting_a_File.vcxproj", "{C63ECF50-75B6-4C18-939C-9634BF353223}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Decrypting_a_File", "Decrypting_a_File\Decrypting_a_File.vcxproj", "{0D31390B-6E3A-45FC-AC88-69BB33DA9A52}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +25,22 @@ Global
 		{ED6E6A5C-01C1-47EE-B4D3-B646E6D092DB}.Release|x64.Build.0 = Release|x64
 		{ED6E6A5C-01C1-47EE-B4D3-B646E6D092DB}.Release|x86.ActiveCfg = Release|Win32
 		{ED6E6A5C-01C1-47EE-B4D3-B646E6D092DB}.Release|x86.Build.0 = Release|Win32
+		{C63ECF50-75B6-4C18-939C-9634BF353223}.Debug|x64.ActiveCfg = Debug|x64
+		{C63ECF50-75B6-4C18-939C-9634BF353223}.Debug|x64.Build.0 = Debug|x64
+		{C63ECF50-75B6-4C18-939C-9634BF353223}.Debug|x86.ActiveCfg = Debug|Win32
+		{C63ECF50-75B6-4C18-939C-9634BF353223}.Debug|x86.Build.0 = Debug|Win32
+		{C63ECF50-75B6-4C18-939C-9634BF353223}.Release|x64.ActiveCfg = Release|x64
+		{C63ECF50-75B6-4C18-939C-9634BF353223}.Release|x64.Build.0 = Release|x64
+		{C63ECF50-75B6-4C18-939C-9634BF353223}.Release|x86.ActiveCfg = Release|Win32
+		{C63ECF50-75B6-4C18-939C-9634BF353223}.Release|x86.Build.0 = Release|Win32
+		{0D31390B-6E3A-45FC-AC88-69BB33DA9A52}.Debug|x64.ActiveCfg = Debug|x64
+		{0D31390B-6E3A-45FC-AC88-69BB33DA9A52}.Debug|x64.Build.0 = Debug|x64
+		{0D31390B-6E3A-45FC-AC88-69BB33DA9A52}.Debug|x86.ActiveCfg = Debug|Win32
+		{0D31390B-6E3A-45FC-AC88-69BB33DA9A52}.Debug|x86.Build.0 = Debug|Win32
+		{0D31390B-6E3A-45FC-AC88-69BB33DA9A52}.Release|x64.ActiveCfg = Release|x64
+		{0D31390B-6E3A-45FC-AC88-69BB33DA9A52}.Release|x64.Build.0 = Release|x64
+		{0D31390B-6E3A-45FC-AC88-69BB33DA9A52}.Release|x86.ActiveCfg = Release|Win32
+		{0D31390B-6E3A-45FC-AC88-69BB33DA9A52}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

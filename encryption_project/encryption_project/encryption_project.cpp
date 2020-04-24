@@ -7,11 +7,13 @@
 #include <filesystem>
 #include <wincrypt.h>
 #include <conio.h>
-#include "encryption_project.h"
+
 
 #define KEYLENGTH  0x00800000
 #define ENCRYPT_ALGORITHM CALG_RC4 
 #define ENCRYPT_BLOCK_SIZE 8 
+
+
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -45,15 +47,26 @@ bool encrypt_file(fs::path file_path)
 	DWORD dwCount;
 
 	bool fEOF = FALSE;
-	string file_name = file_path.filename().string();
+
+	// this is going to be the dst file path 
 	string file_full_path = fs::absolute(file_path).string();
+
+	string file_name = file_path.filename().string();
+	// rename the src file to temp name - this the file to be encrypted
+	string tmp_file_full_path = fs::path(file_full_path).replace_filename(file_name + "_tmp.txt").string();
+	fs::rename(file_full_path, tmp_file_full_path);
+
 	// convert file name to lpcwstr
 	std::wstring stemp = std::wstring(file_full_path.begin(), file_full_path.end());
 	LPCWSTR sw_file_full_path = stemp.c_str();
+
+	// convert file name to lpcwstr
+	std::wstring stemp2 = std::wstring(tmp_file_full_path.begin(), tmp_file_full_path.end());
+	LPCWSTR sw_tmp_file_full_path = stemp2.c_str();
 	//---------------------------------------------------------------
 	// Open the source file. 
 	hSourceFile = CreateFile(
-		sw_file_full_path,
+		sw_tmp_file_full_path,
 		FILE_READ_DATA | FILE_WRITE_DATA,
 		FILE_SHARE_READ,
 		NULL,
@@ -64,7 +77,7 @@ bool encrypt_file(fs::path file_path)
 	{
 		_tprintf(
 			TEXT("The source plaintext file, %s, is open. \n"),
-			sw_file_full_path);
+			sw_tmp_file_full_path);
 	}
 	else
 	{
@@ -75,9 +88,9 @@ bool encrypt_file(fs::path file_path)
 	}
 
 	//---------------------------------------------------------------
-	hDestinationFile = hSourceFile;
+	//hDestinationFile = hSourceFile;
 	// Open the destination file. 
-	/*hDestinationFile = CreateFile(
+	hDestinationFile = CreateFile(
 		sw_file_full_path,
 		FILE_WRITE_DATA,
 		FILE_SHARE_READ,
@@ -97,16 +110,16 @@ bool encrypt_file(fs::path file_path)
 			TEXT("Error opening destination file!\n"),
 			GetLastError());
 		goto Exit_MyEncryptFile;
-	}*/
+	}
 
 	//---------------------------------------------------------------
 	// Get the handle to the default provider. 
 	if (CryptAcquireContext(
-		&hCryptProv,
-		NULL,
+		&hCryptProv,       // Address for handle to be returned.
+		NULL,              // Use the current user's logon name.
 		MS_ENHANCED_PROV,
-		PROV_RSA_FULL,
-		0))
+		PROV_RSA_FULL,     // Need to both encrypt and sign.
+		0))                // No flags needed.
 	{
 		_tprintf(
 			TEXT("A cryptographic provider has been acquired. \n"));
@@ -403,10 +416,10 @@ Exit_MyEncryptFile:
 		CloseHandle(hSourceFile);
 	}
 
-	/*if (hDestinationFile)
+	if (hDestinationFile)
 	{
 		CloseHandle(hDestinationFile);
-	}*/
+	}
 
 	//---------------------------------------------------------------
 	// Free memory. 
@@ -454,8 +467,333 @@ Exit_MyEncryptFile:
 		}
 	}
 
+
+	// detele the tmp.txt file
+	fs::remove(tmp_file_full_path);
+
 	return fReturn;
 } // End Encryptfile.
+
+
+bool decrypt_file(fs::path file_path)
+{
+	//---------------------------------------------------------------
+	// Declare and initialize local variables.
+	bool fReturn = false;
+	HANDLE hSourceFile = INVALID_HANDLE_VALUE;
+	HANDLE hDestinationFile = INVALID_HANDLE_VALUE;
+	HCRYPTKEY hKey = NULL;
+	HCRYPTHASH hHash = NULL;
+
+	HCRYPTPROV hCryptProv = NULL;
+
+	DWORD dwCount;
+	PBYTE pbBuffer = NULL;
+	DWORD dwBlockLen;
+	DWORD dwBufferLen;
+
+	DWORD dwKeyBlobLen;
+	PBYTE pbKeyBlob = NULL;
+
+	bool fEOF = FALSE;
+	// this is going to be the dst file path
+	string file_full_path = fs::absolute(file_path).string();
+	string file_name = file_path.filename().string();
+
+	// rename the src file to temp name - this the file to be encrypted
+	string tmp_file_full_path = fs::path(file_full_path).replace_filename(file_name + "_tmp.txt").string();
+	fs::rename(file_full_path, tmp_file_full_path);
+	
+	// convert file name to lpcwstr
+	std::wstring stemp2 = std::wstring(tmp_file_full_path.begin(), tmp_file_full_path.end());
+	LPCWSTR sw_tmp_file_full_path = stemp2.c_str();
+
+	// convert file name to lpcwstr
+	std::wstring stemp = std::wstring(file_full_path.begin(), file_full_path.end());
+	LPCWSTR sw_file_full_path = stemp.c_str();
+
+
+	//---------------------------------------------------------------
+	// Open the source file. 
+	hSourceFile = CreateFile(
+		sw_tmp_file_full_path,
+		FILE_READ_DATA | FILE_WRITE_DATA,
+		FILE_SHARE_READ,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL);
+	if (INVALID_HANDLE_VALUE != hSourceFile)
+	{
+		_tprintf(
+			TEXT("The source encrypted file, %s, is open. \n"),
+			sw_tmp_file_full_path);
+	}
+	else
+	{
+		MyHandleError(
+			TEXT("Error opening source plaintext file!\n"),
+			GetLastError());
+		goto Exit_MyDecryptFile;
+	}
+
+	//---------------------------------------------------------------
+	// Open the destination file. 
+	hDestinationFile = CreateFile(
+		sw_file_full_path,
+		FILE_WRITE_DATA,
+		FILE_SHARE_READ,
+		NULL,
+		OPEN_ALWAYS,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL);
+	if (INVALID_HANDLE_VALUE != hDestinationFile)
+	{
+		_tprintf(
+			TEXT("The destination file, %s, is open. \n"),
+			sw_file_full_path);
+	}
+	else
+	{
+		MyHandleError(
+			TEXT("Error opening destination file!\n"),
+			GetLastError());
+		goto Exit_MyDecryptFile;
+	}
+
+	//---------------------------------------------------------------
+	// Get the handle to the default provider. 
+	if (CryptAcquireContext(
+		&hCryptProv,
+		NULL,
+		MS_ENHANCED_PROV,
+		PROV_RSA_FULL,
+		0))
+	{
+		_tprintf(
+			TEXT("A cryptographic provider has been acquired. \n"));
+	}
+	else
+	{
+		MyHandleError(
+			TEXT("Error during CryptAcquireContext!\n"),
+			GetLastError());
+		goto Exit_MyDecryptFile;
+	}
+
+	//---------------------------------------------------------------
+	// Create the session key.
+	
+	//-----------------------------------------------------------
+	// Decrypt the file with the saved session key. 
+	// Read the key BLOB length from the source file. 
+	if (!ReadFile(
+		hSourceFile,
+		&dwKeyBlobLen,
+		sizeof(DWORD),
+		&dwCount,
+		NULL))
+	{
+		MyHandleError(
+			TEXT("Error reading key BLOB length!\n"),
+			GetLastError());
+		goto Exit_MyDecryptFile;
+	}
+
+	// Allocate a buffer for the key BLOB.
+	if (!(pbKeyBlob = (PBYTE)malloc(dwKeyBlobLen)))
+	{
+		MyHandleError(
+			TEXT("Memory allocation error.\n"),
+			E_OUTOFMEMORY);
+	}
+
+	//-----------------------------------------------------------
+	// Read the key BLOB from the source file. 
+	if (!ReadFile(
+		hSourceFile,
+		pbKeyBlob,
+		dwKeyBlobLen,
+		&dwCount,
+		NULL))
+	{
+		MyHandleError(
+			TEXT("Error reading key BLOB length!\n"),
+			GetLastError());
+		goto Exit_MyDecryptFile;
+	}
+
+	//-----------------------------------------------------------
+	// Import the key BLOB into the CSP. 
+	if (!CryptImportKey(
+		hCryptProv,
+		pbKeyBlob,
+		dwKeyBlobLen,
+		0,
+		0,
+		&hKey))
+	{
+		MyHandleError(
+			TEXT("Error during CryptImportKey!/n"),
+			GetLastError());
+		goto Exit_MyDecryptFile;
+	}
+
+	if (pbKeyBlob)
+	{
+		free(pbKeyBlob);
+	}
+
+	//---------------------------------------------------------------
+	// The decryption key is now available, either having been 
+	// imported from a BLOB read in from the source file or having 
+	// been created by using the password. This point in the program 
+	// is not reached if the decryption key is not available.
+
+	//---------------------------------------------------------------
+	// Determine the number of bytes to decrypt at a time. 
+	// This must be a multiple of ENCRYPT_BLOCK_SIZE. 
+
+	dwBlockLen = 1000 - 1000 % ENCRYPT_BLOCK_SIZE;
+	dwBufferLen = dwBlockLen;
+
+	//---------------------------------------------------------------
+	// Allocate memory for the file read buffer. 
+	if (!(pbBuffer = (PBYTE)malloc(dwBufferLen)))
+	{
+		MyHandleError(TEXT("Out of memory!\n"), E_OUTOFMEMORY);
+		goto Exit_MyDecryptFile;
+	}
+
+	//---------------------------------------------------------------
+	// Decrypt the source file, and write to the destination file. 
+	fEOF = false;
+	do
+	{
+		//-----------------------------------------------------------
+		// Read up to dwBlockLen bytes from the source file. 
+		if (!ReadFile(
+			hSourceFile,
+			pbBuffer,
+			dwBlockLen,
+			&dwCount,
+			NULL))
+		{
+			MyHandleError(
+				TEXT("Error reading from source file!\n"),
+				GetLastError());
+			goto Exit_MyDecryptFile;
+		}
+
+		if (dwCount <= dwBlockLen)
+		{
+			fEOF = TRUE;
+		}
+
+		//-----------------------------------------------------------
+		// Decrypt the block of data. 
+		if (!CryptDecrypt(
+			hKey,
+			0,
+			fEOF,
+			0,
+			pbBuffer,
+			&dwCount))
+		{
+			MyHandleError(
+				TEXT("Error during CryptDecrypt!\n"),
+				GetLastError());
+			goto Exit_MyDecryptFile;
+		}
+
+		//-----------------------------------------------------------
+		// Write the decrypted data to the destination file. 
+		if (!WriteFile(
+			hDestinationFile,
+			pbBuffer,
+			dwCount,
+			&dwCount,
+			NULL))
+		{
+			MyHandleError(
+				TEXT("Error writing ciphertext.\n"),
+				GetLastError());
+			goto Exit_MyDecryptFile;
+		}
+
+		//-----------------------------------------------------------
+		// End the do loop when the last block of the source file 
+		// has been read, encrypted, and written to the destination 
+		// file.
+	} while (!fEOF);
+
+	fReturn = true;
+
+Exit_MyDecryptFile:
+
+	//---------------------------------------------------------------
+	// Free the file read buffer.
+	if (pbBuffer)
+	{
+		free(pbBuffer);
+	}
+
+	//---------------------------------------------------------------
+	// Close files.
+	if (hSourceFile)
+	{
+		CloseHandle(hSourceFile);
+	}
+
+	if (hDestinationFile)
+	{
+		CloseHandle(hDestinationFile);
+	}
+
+	//-----------------------------------------------------------
+	// Release the hash object. 
+	if (hHash)
+	{
+		if (!(CryptDestroyHash(hHash)))
+		{
+			MyHandleError(
+				TEXT("Error during CryptDestroyHash.\n"),
+				GetLastError());
+		}
+
+		hHash = NULL;
+	}
+
+	//---------------------------------------------------------------
+	// Release the session key. 
+	if (hKey)
+	{
+		if (!(CryptDestroyKey(hKey)))
+		{
+			MyHandleError(
+				TEXT("Error during CryptDestroyKey!\n"),
+				GetLastError());
+		}
+	}
+
+	//---------------------------------------------------------------
+	// Release the provider handle. 
+	if (hCryptProv)
+	{
+		if (!(CryptReleaseContext(hCryptProv, 0)))
+		{
+			MyHandleError(
+				TEXT("Error during CryptReleaseContext!\n"),
+				GetLastError());
+		}
+	}
+
+	// detele the tmp file
+	fs::remove(tmp_file_full_path);
+
+	return fReturn;
+}
+
 
 
 void process_file(fs::path file_path, string& mode)
@@ -464,6 +802,10 @@ void process_file(fs::path file_path, string& mode)
 	if (mode == "encrypt")
 	{
 		encrypt_file(file_path);
+	}
+	else if (mode == "decrypt")
+	{
+		decrypt_file(file_path);
 	}
 }
 
@@ -506,13 +848,13 @@ void iterate_dir(string& dir_path, string& mode)
 
 int main(int argc, char** argv)
 {
+	// todo: check args
+	// todo: check ret val for encrypt and decrypt
 	if (argc < 3)
 	{
 		_tprintf(TEXT("Usage: <target dir> <mode: encrypt or decrypt> \n"));
 		return 1;
 	}
-
-
 
 	string dir_name = argv[1];
 	string mode = argv[2];

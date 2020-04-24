@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="encryption_project.cpp">
+    <ClCompile Include="Encrypting_a_File.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
