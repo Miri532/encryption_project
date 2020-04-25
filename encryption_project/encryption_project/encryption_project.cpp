@@ -799,7 +799,7 @@ Exit_MyDecryptFile:
 void ProcessFile(fs::path file_path, string& mode)
 {
 	std::cout << "in process file: " << file_path.filename().string() << '\n';
-	if (mode == "Encrypt")
+	if (_stricmp(mode.c_str(), "Encrypt") == 0)
 	{
 		bool res_encrypt = EncryptFile(file_path);
 		if (!res_encrypt)
@@ -809,7 +809,7 @@ void ProcessFile(fs::path file_path, string& mode)
 				GetLastError());
 		}
 	}
-	else if (mode == "Decrypt")
+	else if (_stricmp(mode.c_str(), "Decrypt") == 0)
 	{
 		bool res_decrypt = DecryptFile(file_path);
 		if (!res_decrypt)
@@ -824,6 +824,8 @@ void ProcessFile(fs::path file_path, string& mode)
 // encrypt .txt file in dir recursively
 void IterateDir(string& dir_path, string& mode)
 {
+	std::vector<std::thread> futures;
+
 	try {
 		const fs::path pathToShow{ dir_path };
 
@@ -837,12 +839,23 @@ void IterateDir(string& dir_path, string& mode)
 				std::cout << "file: " << filenameStr << '\n';
 				if (_stricmp(iterEntry->path().extension().string().c_str(), ".txt") == 0)
 				{
-					ProcessFile(iterEntry->path(), mode);
+					futures.emplace_back(ProcessFile, std::ref(iterEntry->path()), std::ref(mode));
 				}
 			}
 			else
 				std::cout << "??    " << filenameStr << '\n';
 		}
+		// wait for all the file processing to finish
+		for (auto& future : futures) {
+			// Blocks until the result becomes available
+			future.join();
+			
+		}
+
+		
+
+
+
 	}
 	catch (const fs::filesystem_error & err) {
 		std::cerr << "filesystem error! " << err.what() << '\n';
@@ -869,7 +882,7 @@ int main(int argc, char** argv)
 	string dir_name = argv[1];
 	string mode = argv[2];
 
-	if (mode != "Encrypt" && mode != "Decrypt")
+	if (_stricmp(mode.c_str(), "Encrypt") != 0  && _stricmp(mode.c_str(), "Decrypt") != 0)
 	{
 		_tprintf(TEXT("Usage: <target dir> <mode: Encrypt or Decrypt> \n"));
 		return 1;
