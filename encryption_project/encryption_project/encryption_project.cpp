@@ -13,9 +13,6 @@
 #define ENCRYPT_ALGORITHM CALG_RC4 
 #define ENCRYPT_BLOCK_SIZE 8 
 
-
-
-using namespace std;
 namespace fs = std::filesystem;
 
 void MyHandleError(const wchar_t* psz, int nErrorNumber)
@@ -49,11 +46,11 @@ bool EncryptFile(fs::path file_path)
 	bool fEOF = FALSE;
 
 	// this is going to be the dst file path 
-	string file_full_path = fs::absolute(file_path).string();
+	std::string file_full_path = fs::absolute(file_path).string();
 
-	string file_name = file_path.filename().string();
+	std::string file_name = file_path.filename().string();
 	// rename the src file to temp name - this the file to be encrypted
-	string tmp_file_full_path = fs::path(file_full_path).replace_filename(file_name + "_tmp.txt").string();
+	std::string tmp_file_full_path = fs::path(file_full_path).replace_filename(file_name + "_tmp.txt").string();
 	fs::rename(file_full_path, tmp_file_full_path);
 
 	// convert file name to lpcwstr
@@ -497,11 +494,11 @@ bool DecryptFile(fs::path file_path)
 
 	bool fEOF = FALSE;
 	// this is going to be the dst file path
-	string file_full_path = fs::absolute(file_path).string();
-	string file_name = file_path.filename().string();
+	std::string file_full_path = fs::absolute(file_path).string();
+	std::string file_name = file_path.filename().string();
 
 	// rename the src file to temp name - this the file to be encrypted
-	string tmp_file_full_path = fs::path(file_full_path).replace_filename(file_name + "_tmp.txt").string();
+	std::string tmp_file_full_path = fs::path(file_full_path).replace_filename(file_name + "_tmp.txt").string();
 	fs::rename(file_full_path, tmp_file_full_path);
 	
 	// convert file name to lpcwstr
@@ -796,7 +793,7 @@ Exit_MyDecryptFile:
 
 
 
-void ProcessFile(fs::path file_path, string& mode)
+void ProcessFile(fs::path file_path, std::string& mode)
 {
 	std::cout << "in process file: " << file_path.filename().string() << '\n';
 	if (_stricmp(mode.c_str(), "Encrypt") == 0)
@@ -822,41 +819,22 @@ void ProcessFile(fs::path file_path, string& mode)
 }
 
 // encrypt .txt file in dir recursively
-void IterateDir(string& dir_path, string& mode)
+void IterateDir(std::string& dir_path, std::string& mode)
 {
-	std::vector<std::thread> futures;
-
 	try {
 		const fs::path pathToShow{ dir_path };
 
 		for (auto iterEntry = fs::recursive_directory_iterator(pathToShow); iterEntry != fs::recursive_directory_iterator(); ++iterEntry) {
-			const auto filenameStr = iterEntry->path().filename().string();
-			std::cout << std::setw(iterEntry.depth() * 3) << "";
-			if (iterEntry->is_directory()) {
-				std::cout << "dir:  " << filenameStr << '\n';
-			}
-			else if (iterEntry->is_regular_file()) {
-				std::cout << "file: " << filenameStr << '\n';
+			if (iterEntry->is_regular_file()) 
+			{
 				if (_stricmp(iterEntry->path().extension().string().c_str(), ".txt") == 0)
 				{
-					futures.emplace_back(ProcessFile, std::ref(iterEntry->path()), std::ref(mode));
+					ProcessFile(iterEntry->path(), mode);
 				}
 			}
-			else
-				std::cout << "??    " << filenameStr << '\n';
-		}
-		// wait for all the file processing to finish
-		for (auto& future : futures) {
-			// Blocks until the result becomes available
-			future.join();
-			
-		}
-
-		
-
-
-
+		}			
 	}
+
 	catch (const fs::filesystem_error & err) {
 		std::cerr << "filesystem error! " << err.what() << '\n';
 		if (!err.path1().empty())
@@ -879,8 +857,8 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	string dir_name = argv[1];
-	string mode = argv[2];
+	std::string dir_name = argv[1];
+	std::string mode = argv[2];
 
 	if (_stricmp(mode.c_str(), "Encrypt") != 0  && _stricmp(mode.c_str(), "Decrypt") != 0)
 	{
